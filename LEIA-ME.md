@@ -39,3 +39,7 @@ O GPS do navegador só funciona em endereço **HTTPS**. Publique a pasta `app-tr
 - `js/exercises.js` – biblioteca com 70 exercícios (execução, postura, erros comuns)
 - `js/resttimer.js` – cronômetro de descanso entre séries (som, vibração, notificação)
 - `js/views/` – telas (início, calendário, musculação, corridas, cronômetro, cardio, biblioteca, metas e conquistas, relatório em PDF, evolução, corpo, recuperação, plano, perfil)
+
+## Publicar uma atualização
+
+Mude o número da versão (o mesmo nos três) em `js/version.js`, `version.json` e `sw.js`, faça commit e `git push`. O app instalado mostra o aviso **Atualizar** na próxima vez que for aberto.
