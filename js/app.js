@@ -17,6 +17,9 @@ import * as report from './views/report.js';
 import { resumeRest } from './resttimer.js';
 import { initUpdates } from './updater.js';
 import { initCloud } from './cloud.js';
+import { handleCallback } from './strava.js';
+import { sheet } from './ui.js';
+import { esc } from './util.js';
 import { fmtDur } from './util.js';
 import { icon } from './ui.js';
 
@@ -95,6 +98,24 @@ async function init() {
   setInterval(() => updateLive(parseHash().name), 1000);
   initUpdates();
   initCloud(onCloudData);
+  stravaReturn();
+}
+
+// Volta da autorização do Strava. No iPhone ela pode abrir no Safari em vez do app instalado.
+async function stravaReturn() {
+  const r = await handleCallback();
+  if (!r) return;
+  closeSplash();
+  const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const name = [r.athlete?.firstname, r.athlete?.lastname].filter(Boolean).join(' ');
+  sheet(r.ok
+    ? `<h2><span class="strava-mark">S</span> Strava conectado!</h2>
+       <p>${name ? `Conta de <b>${esc(name)}</b> ligada ao Olimpo.` : 'Sua conta do Strava foi ligada ao Olimpo.'} Suas corridas serão enviadas automaticamente.</p>
+       ${r.canWrite === false ? '<p class="small">⚠ A permissão de enviar atividades não foi marcada. Para envio automático, desconecte e conecte de novo deixando todas as opções marcadas.</p>' : ''}
+       ${installed ? '' : '<p class="small muted">Pode fechar esta página e voltar ao app <b>Olimpo</b> na tela de início.</p>'}
+       <button class="btn block" data-close>OK</button>`
+    : `<h2>Strava</h2><p>${esc(r.msg)}</p><button class="btn block" data-close>OK</button>`);
+  if (parseHash().name === 'perfil') router();
 }
 
 // Chegaram dados da nuvem: atualiza a tela atual, exceto formulários em que o usuário pode estar digitando

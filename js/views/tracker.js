@@ -6,6 +6,7 @@ import { pendingItemFor } from '../schedule.js';
 import { latestWeight } from '../analysis.js';
 import { $, chips, bindChips, chipVal } from '../ui.js';
 import { MODALITIES } from '../defaults.js';
+import { autoSend } from '../strava.js';
 
 const KEY = 'run-live-v1';
 let T = null;
@@ -194,6 +195,7 @@ async function finish() {
     source: 'cronometro',
   };
   const saved = await put('sessions', session);
+  autoSend(saved);
   localStorage.removeItem(KEY);
   T = null;
   toast('Corrida salva');

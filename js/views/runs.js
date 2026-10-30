@@ -7,6 +7,8 @@ import { lineChart, barChart, routeSvg } from '../charts.js';
 import { $, $$, stat, chips, bindChips, chipVal, scale, field } from '../ui.js';
 import { MODALITIES } from '../defaults.js';
 import { isLive, liveSummary } from './tracker.js';
+import * as strava from '../strava.js';
+const { autoSend } = strava;
 
 const modName = m => MODALITIES.find(x => x[0] === m)?.[1] || m || '';
 const delta = (v, good, txt) => `<span class="delta ${v === 0 ? '' : good ? 'up' : 'down'}">${txt}</span>`;
@@ -34,6 +36,7 @@ export function renderList(el) {
         <a class="btn run big alt" href="#/correr?tipo=B"><span class="god">Corrida B</span><small>Velocidade</small></a>
       </div>
       <a class="btn secondary block top" href="#/corrida-manual">Registrar corrida manualmente</a>
+      ${strava.connected() ? '<button class="btn strava block top" id="s-import">Importar corridas do Strava</button>' : '<a class="small top strava-link" href="#/perfil">Conectar ao Strava ›</a>'}
     </section>
 
     <section class="card">
@@ -101,6 +104,11 @@ export function renderList(el) {
         <span class="muted">›</span></a>`).join('') : '<p class="muted">Nenhuma corrida registrada ainda.</p>'}
     </section>`;
   bindChips(el, (n, v) => { filter = v; renderList(el); });
+  $('#s-import', el)?.addEventListener('click', async e => {
+    e.target.disabled = true; e.target.textContent = 'Buscando no Strava…';
+    try { const n = await strava.importRuns(); toast(n ? `${n} corrida(s) importada(s) do Strava` : 'Nenhuma corrida nova no Strava'); renderList(el); }
+    catch (err) { toast(`Strava: ${err.message}`); e.target.disabled = false; e.target.textContent = 'Importar corridas do Strava'; }
+  });
 }
 
 export function renderDetail(el, p) {
@@ -123,6 +131,11 @@ export function renderDetail(el, p) {
         ${stat('Esforço', r.rpe ? r.rpe + '/10' : '–')}
       </div>
     </section>
+    ${strava.connected() || r.strava?.activityId ? `<section class="card strava-row">
+      <span class="strava-mark">S</span>
+      <div class="grow small">${r.strava?.activityId ? `${r.source === 'strava' ? 'Importada do Strava' : 'Enviada ao Strava'} ✓` : r.strava?.uploadId ? 'Enviada, o Strava ainda está processando' : 'Ainda não enviada ao Strava'}</div>
+      ${r.strava?.activityId ? `<a class="btn sm secondary" href="${strava.activityUrl(r.strava.activityId)}" target="_blank" rel="noopener">Ver no Strava</a>` : `<button class="btn sm strava" id="d-strava">Enviar</button>`}
+    </section>` : ''}
     ${r.route?.length > 1 ? `<section class="card"><h2>Trajeto</h2>${routeSvg(r.route)}<div class="legend"><span><i class="dot" style="background:var(--ok)"></i>Início</span><span><i class="dot" style="background:var(--danger)"></i>Fim</span></div></section>` : ''}
     ${r.splits?.length ? `<section class="card"><h2>Parciais por km</h2>${splitBars(r.splits)}</section>` : ''}
     ${r.intervals?.length ? `<section class="card"><h2>Intervalos</h2><table><thead><tr><th>#</th><th>Tiro</th><th>Recuperação</th><th>Distância</th><th>Ritmo</th></tr></thead><tbody>
@@ -152,6 +165,11 @@ export function renderDetail(el, p) {
     await put('sessions', r); toast('Corrida atualizada');
     location.hash = '#/corridas';
   };
+  $('#d-strava', el)?.addEventListener('click', async e => {
+    e.target.disabled = true; e.target.textContent = 'Enviando…';
+    try { await strava.sendToStrava(r); toast('Enviada ao Strava ✓'); renderDetail(el, { arg: r.id }); }
+    catch (err) { toast(`Strava: ${err.message}`); e.target.disabled = false; e.target.textContent = 'Enviar'; }
+  });
   $('#d-del', el).onclick = async () => {
     if (!confirm('Excluir esta corrida do histórico?')) return;
     await del('sessions', r.id); toast('Corrida excluída'); location.hash = '#/corridas';
@@ -221,6 +239,7 @@ export function renderManual(el, p) {
     const best = parseDur($('#m-best', el).value);
     r.bestPaceSec = Math.min(...[best || Infinity, ...splits.map(s => s.sec), r.avgPaceSec]);
     const saved = await put('sessions', r);
+    autoSend(saved);
     toast('Corrida salva');
     location.hash = `#/corrida/${saved.id}`;
   };

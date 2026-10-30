@@ -7,6 +7,7 @@ import { $, $$, chips, bindChips, chipVal, scale, field, insightList } from '../
 import { REST_ACTIVITIES } from '../defaults.js';
 import { startRest, stopRest, restSeconds } from '../resttimer.js';
 import { pickExercise, openDetail } from './library.js';
+import { autoSend } from '../strava.js';
 
 const DRAFT = 'draft-strength-';
 export const LIVE_KEY = 'strength-live';
@@ -191,6 +192,7 @@ export function render(el, p) {
       const prs = sessionPRs(session);
       session.prs = prs;
       await put('sessions', session);
+      if (!p.id) autoSend(session);
       clearDraft(); stopRest();
       toast(prs.length ? `Novo recorde! ${prs[0]}` : 'Treino salvo');
       location.hash = p.id ? '#/inicio' : `#/cardio?apos=${session.id}&data=${session.date}`;

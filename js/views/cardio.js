@@ -3,6 +3,7 @@ import { S, put, del } from '../store.js';
 import { todayISO, fmtDate, fmtDur, fmtNum, fmtInt, parseDur, num, esc, toast, metKcal } from '../util.js';
 import { latestWeight } from '../analysis.js';
 import { $, chips, bindChips, chipVal, field } from '../ui.js';
+import { autoSend } from '../strava.js';
 
 export const CARDIO_TYPES = [
   ['esteira', 'Esteira'], ['bike', 'Bicicleta ergométrica'], ['bike_rua', 'Bicicleta ao ar livre'], ['eliptico', 'Elíptico'],
@@ -119,6 +120,7 @@ export function render(el, p) {
       if (!c.durationSec) { toast('Informe o tempo ou use o cronômetro'); return; }
       c.kcal = Math.round(metKcal(met(c.cardioType, c.avgSpeed), latestWeight(c.date) || 70, c.durationSec));
       await put('sessions', c);
+      autoSend(c);
       localStorage.removeItem(KEY);
       toast('Cardio salvo'); location.hash = '#/inicio';
     });

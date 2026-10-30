@@ -5,6 +5,52 @@ import { $, chips, bindChips, chipVal, field, icon } from '../ui.js';
 import { GOALS, LEVELS } from '../defaults.js';
 import { APP_VERSION, checkForUpdate, forceUpdate } from '../updater.js';
 import * as cloud from '../cloud.js';
+import * as strava from '../strava.js';
+
+// Seção "Strava": conectar, preferências de envio automático e importação
+function stravaCard(box) {
+  const draw = (msg = '') => {
+    if (!box.isConnected) return;
+    const logged = !!cloud.status().user;
+    const st = strava.cachedStatus();
+    const p = strava.prefs();
+    if (!logged) {
+      box.innerHTML = `<h2><span class="strava-mark">S</span> Strava</h2><p class="small muted">Entre na sua conta da nuvem (acima) para conectar o Strava.</p>`;
+      return;
+    }
+    if (!st?.connected) {
+      box.innerHTML = `<h2><span class="strava-mark">S</span> Strava</h2>
+        <p class="small muted">Conecte para enviar suas corridas automaticamente ao Strava (com o trajeto do GPS) e trazer para o app as corridas feitas no relógio ou no Strava.</p>
+        <button class="btn strava block" id="s-connect">Conectar com o Strava</button>
+        <p class="small muted" id="s-msg">${esc(msg)}</p>`;
+      $('#s-connect', box).onclick = async () => {
+        $('#s-msg', box).textContent = 'Abrindo o Strava…';
+        try { await strava.connect(); } catch (e) { $('#s-msg', box).textContent = e.message; }
+      };
+      return;
+    }
+    const name = [st.athlete?.firstname, st.athlete?.lastname].filter(Boolean).join(' ');
+    box.innerHTML = `<h2><span class="strava-mark">S</span> Strava</h2>
+      <p class="small">✓ Conectado${name ? ` como <b>${esc(name)}</b>` : ''}</p>
+      <div class="field"><span>Enviar automaticamente ao Strava</span>${chips('s-auto', [['runs', 'Corridas'], ['cardio', 'Cardio'], ['strength', 'Musculação']], Object.keys(p).filter(k => p[k]), true)}</div>
+      <div class="row gap"><button class="btn secondary grow" id="s-import">Importar corridas do Strava</button><button class="btn secondary grow" id="s-off">Desconectar</button></div>
+      <p class="small muted" id="s-msg">${esc(msg)}</p>`;
+    bindChips(box, (n, v) => { if (n === 's-auto') strava.setPrefs({ runs: v.includes('runs'), cardio: v.includes('cardio'), strength: v.includes('strength') }); });
+    $('#s-import', box).onclick = async () => {
+      $('#s-msg', box).textContent = 'Buscando corridas no Strava…';
+      try { const n = await strava.importRuns(); draw(n ? `${n} corrida(s) importada(s). Veja em Corridas.` : 'Nenhuma corrida nova no Strava.'); }
+      catch (e) { $('#s-msg', box).textContent = e.message; }
+    };
+    $('#s-off', box).onclick = async () => {
+      if (!confirm('Desconectar o Strava? As atividades já enviadas continuam no Strava.')) return;
+      try { await strava.disconnect(); draw('Strava desconectado.'); } catch (e) { $('#s-msg', box).textContent = e.message; }
+    };
+  };
+  draw();
+  // confere a situação real no servidor quando há conta conectada
+  if (cloud.status().user) strava.refreshStatus().then(() => draw()).catch(() => {});
+  const off = cloud.onStatus(() => { if (!box.isConnected) { off(); return; } if (!box.querySelector('#s-import, #s-connect')) draw(); });
+}
 
 const timeAgo = t => {
   if (!t) return 'ainda não sincronizado';
@@ -83,6 +129,7 @@ export function render(el, p) {
     </section>
 
     <section class="card" id="cloud"></section>
+    ${welcome ? '' : '<section class="card" id="strava-card"></section>'}
 
     ${welcome ? '' : `<section class="card">
       <h2>Backup dos dados</h2>
@@ -101,6 +148,7 @@ export function render(el, p) {
     </section>`;
   bindChips(el);
   cloudCard($('#cloud', el), welcome);
+  if ($('#strava-card', el)) stravaCard($('#strava-card', el));
   checkForUpdate().then(v => {
     const s = $('#p-latest', el);
     if (!s) return;

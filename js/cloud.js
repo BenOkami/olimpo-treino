@@ -53,6 +53,14 @@ export async function initCloud(onDataChanged) {
   setInterval(() => { if (document.visibilityState === 'visible') sync(); }, 60000);
 }
 
+// Token da sessão atual (usado para chamar as funções do servidor, como a do Strava)
+export async function accessToken() {
+  const c = await client();
+  if (!c) return null;
+  const { data } = await c.auth.getSession();
+  return data.session?.access_token || null;
+}
+
 /* ---------- conta ---------- */
 
 export async function signIn(email, password) {
