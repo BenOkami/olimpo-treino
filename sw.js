@@ -1,5 +1,5 @@
 // Service worker: deixa o app disponível offline (os dados já ficam no IndexedDB).
-const CACHE = 'treino-v8';
+const CACHE = 'treino-v9';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/styles.css', 'icons/icon.svg', 'icons/column.svg', 'icons/column-faint.svg', 'icons/laurel.svg', 'icons/icon-192.png', 'icons/icon-180.png',
   'js/app.js', 'js/db.js', 'js/store.js', 'js/util.js', 'js/defaults.js', 'js/schedule.js', 'js/analysis.js', 'js/charts.js', 'js/ui.js',
