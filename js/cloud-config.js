@@ -2,6 +2,6 @@
 // a segurança vem das regras (RLS) do banco: cada pessoa só acessa os próprios dados.
 // Nunca coloque aqui a chave service_role/secret.
 export const CLOUD = {
-  url: '',
-  key: '',
+  url: 'https://fmsccmrjvbgbcakqiewh.supabase.co',
+  key: 'sb_publishable_roFso8J-wMQWqKgHEpi48g_ozXj4eI0',
 };

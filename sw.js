@@ -1,6 +1,6 @@
 // Service worker: deixa o app disponível offline (os dados já ficam no IndexedDB).
 // Ao publicar uma versão nova, mude VERSION aqui, em js/version.js e em version.json.
-const VERSION = '2026.10.30-11';
+const VERSION = '2026.10.30-12';
 const CACHE = 'treino-' + VERSION;
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'version.json', 'css/styles.css',

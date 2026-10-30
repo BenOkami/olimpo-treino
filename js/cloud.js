@@ -64,7 +64,8 @@ export async function signIn(email, password) {
 
 export async function signUp(email, password) {
   const c = await client();
-  const { data, error } = await c.auth.signUp({ email, password });
+  // o link de confirmação do e-mail volta para o app publicado
+  const { data, error } = await c.auth.signUp({ email, password, options: { emailRedirectTo: `${location.origin}${location.pathname}` } });
   if (error) throw new Error(authMessage(error));
   if (!data.session) return 'confirm'; // o Supabase pediu confirmação por e-mail
   await afterLogin();
