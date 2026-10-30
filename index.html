@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Olimpo · Treino Integrado</title>
+  <meta name="description" content="Planejamento semanal integrado de musculação e corrida">
+  <meta name="theme-color" content="#0c0a07">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <meta name="apple-mobile-web-app-title" content="Olimpo">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="splash" role="dialog" aria-label="Boas-vindas">
+    <i class="sp-meander top"></i>
+    <img class="sp-col left" src="icons/column.svg" alt="">
+    <img class="sp-col right" src="icons/column.svg" alt="">
+    <div class="sp-center">
+      <div class="sp-emblem">
+        <img class="sp-laurel" src="icons/laurel.svg" alt="">
+        <svg class="sp-bolt" viewBox="0 0 100 120" aria-hidden="true"><defs><linearGradient id="bolt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c4"/><stop offset=".5" stop-color="#f0cf5a"/><stop offset="1" stop-color="#b88a1c"/></linearGradient></defs><polygon points="58,4 20,66 46,66 34,116 84,46 56,46 72,4" fill="url(#bolt)"/></svg>
+      </div>
+      <p class="sp-hello">Bem-vindo,</p>
+      <h1 class="sp-title">Deus Grego</h1>
+      <p class="sp-sub">Que a força do Olimpo guie o seu treino</p>
+    </div>
+    <span class="sp-hint">Toque para entrar</span>
+    <i class="sp-meander bottom"></i>
+  </div>
+  <header class="topbar"><h1 id="title">Olimpo</h1></header>
+  <a id="live" class="live-banner" href="#/correr" hidden></a>
+  <main id="view"></main>
+  <nav class="tabbar" aria-label="Navegação principal"></nav>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
