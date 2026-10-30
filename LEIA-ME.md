@@ -11,6 +11,17 @@ node serve.js
 
 Depois abra http://localhost:5173.
 
+## Link do app
+
+**https://benokami.github.io/olimpo-treino/**
+
+### Instalar no iPhone
+
+1. Abra o link no **Safari** (precisa ser o Safari).
+2. Toque em **Compartilhar** (quadrado com seta para cima).
+3. Escolha **Adicionar à Tela de Início** e toque em **Adicionar**.
+4. Abra o app pelo ícone **Olimpo** e permita a localização quando pedir (para o GPS das corridas).
+
 ## Usar no celular (com GPS)
 
 O GPS do navegador só funciona em endereço **HTTPS**. Publique a pasta `app-treino` em um host estático
