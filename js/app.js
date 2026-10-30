@@ -15,6 +15,7 @@ import * as cardio from './views/cardio.js';
 import * as goals from './views/goals.js';
 import * as report from './views/report.js';
 import { resumeRest } from './resttimer.js';
+import { initUpdates } from './updater.js';
 import { fmtDur } from './util.js';
 import { icon } from './ui.js';
 
@@ -91,7 +92,7 @@ async function init() {
   router();
   resumeRest();
   setInterval(() => updateLive(parseHash().name), 1000);
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  initUpdates();
 }
 
 init();

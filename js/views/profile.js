@@ -3,6 +3,7 @@ import { S, setKV, exportAll, importAll, wipe } from '../store.js';
 import { todayISO, num, esc, toast } from '../util.js';
 import { $, chips, bindChips, chipVal, field, icon } from '../ui.js';
 import { GOALS, LEVELS } from '../defaults.js';
+import { APP_VERSION, checkForUpdate, forceUpdate } from '../updater.js';
 
 export function render(el, p) {
   const pr = S.profile;
@@ -32,8 +33,20 @@ export function render(el, p) {
         <label class="btn secondary grow">Importar backup<input type="file" accept="application/json,.json" id="p-import" hidden></label>
       </div>
       <button class="link muted small top" id="p-wipe">Apagar todos os dados</button>
-    </section>`}`;
+    </section>`}
+    <section class="card">
+      <h2>Atualização do app</h2>
+      <p class="small muted">Versão instalada: <b>${APP_VERSION}</b> · <span id="p-latest">verificando…</span></p>
+      <button class="btn secondary block" id="p-update">Atualizar o app agora</button>
+      <p class="small muted">Baixa a versão mais recente. Seus treinos, fotos e medidas não são apagados.</p>
+    </section>`;
   bindChips(el);
+  checkForUpdate().then(v => {
+    const s = $('#p-latest', el);
+    if (!s) return;
+    s.textContent = v == null ? 'sem conexão para verificar' : v === APP_VERSION ? 'você está na versão mais recente' : `nova versão disponível: ${v}`;
+  });
+  $('#p-update', el).onclick = forceUpdate;
   $('#p-save', el).onclick = async () => {
     const name = $('#p-name', el).value.trim();
     if (!name) { toast('Informe seu nome'); return; }
