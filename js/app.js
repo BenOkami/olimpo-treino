@@ -74,22 +74,21 @@ function updateLive(name) {
   } else live.hidden = true;
 }
 
-// Tela de boas-vindas: aparece ao abrir o app e some sozinha (ou com um toque)
-const splashStart = performance.now();
-function closeSplash(delay = 0) {
+// Tela de boas-vindas: fica aberta até o usuário tocar em "Entrar"
+function closeSplash() {
   const el = document.getElementById('splash');
   if (!el || el.dataset.closing) return;
   el.dataset.closing = '1';
-  setTimeout(() => { el.classList.add('hide'); setTimeout(() => el.remove(), 800); }, delay);
+  el.classList.add('hide');
+  setTimeout(() => el.remove(), 1300);
 }
-document.getElementById('splash')?.addEventListener('click', () => closeSplash());
+document.getElementById('sp-enter')?.addEventListener('click', closeSplash);
 
 async function init() {
   document.querySelector('.tabbar').innerHTML = TABS.map(([t, ic, l]) => `<a href="#/${t}" data-tab="${t}">${icon(ic)}<span>${l}</span></a>`).join('');
   await load();
   window.addEventListener('hashchange', router);
   router();
-  closeSplash(Math.max(0, 2800 - (performance.now() - splashStart)));
   resumeRest();
   setInterval(() => updateLive(parseHash().name), 1000);
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
