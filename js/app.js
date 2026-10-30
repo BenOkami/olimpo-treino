@@ -16,6 +16,7 @@ import * as goals from './views/goals.js';
 import * as report from './views/report.js';
 import { resumeRest } from './resttimer.js';
 import { initUpdates } from './updater.js';
+import { initCloud } from './cloud.js';
 import { fmtDur } from './util.js';
 import { icon } from './ui.js';
 
@@ -93,6 +94,15 @@ async function init() {
   resumeRest();
   setInterval(() => updateLive(parseHash().name), 1000);
   initUpdates();
+  initCloud(onCloudData);
+}
+
+// Chegaram dados da nuvem: atualiza a tela atual, exceto formulários em que o usuário pode estar digitando
+const REFRESHABLE = ['inicio', 'calendario', 'corridas', 'evolucao', 'metas', 'relatorio', 'mais', 'biblioteca'];
+function onCloudData() {
+  const { name } = parseHash();
+  if (name === 'perfil' && S.profile.name && !document.getElementById('p-name')?.value) { location.hash = '#/inicio'; return; }
+  if (REFRESHABLE.includes(name || 'inicio')) router();
 }
 
 init();

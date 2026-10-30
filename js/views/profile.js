@@ -4,6 +4,63 @@ import { todayISO, num, esc, toast } from '../util.js';
 import { $, chips, bindChips, chipVal, field, icon } from '../ui.js';
 import { GOALS, LEVELS } from '../defaults.js';
 import { APP_VERSION, checkForUpdate, forceUpdate } from '../updater.js';
+import * as cloud from '../cloud.js';
+
+const timeAgo = t => {
+  if (!t) return 'ainda não sincronizado';
+  const m = Math.round((Date.now() - t) / 60000);
+  return m < 1 ? 'sincronizado agora' : m < 60 ? `sincronizado há ${m} min` : `sincronizado em ${new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`;
+};
+
+// Seção "Nuvem": login, situação da sincronização e ações
+function cloudCard(box, welcome) {
+  const draw = st => {
+    if (!box.isConnected) return;
+    if (!st.configured) {
+      box.innerHTML = '<h2>Nuvem</h2><p class="small muted">A nuvem ainda não foi configurada neste app.</p>';
+      return;
+    }
+    if (!st.user) {
+      box.innerHTML = `<h2>Nuvem</h2>
+        <p class="small muted">${welcome ? 'Já usa o Olimpo em outro aparelho? Entre para trazer todos os seus dados.' : 'Entre com seu e-mail para salvar tudo na nuvem automaticamente e nunca perder seus dados.'}</p>
+        ${field('E-mail', '<input type="email" id="c-email" autocomplete="email" inputmode="email" autocapitalize="off">')}
+        ${field('Senha (mínimo 6 caracteres)', '<input type="password" id="c-pass" autocomplete="current-password">')}
+        <div class="row gap"><button class="btn grow" id="c-in">Entrar</button><button class="btn secondary grow" id="c-up">Criar conta</button></div>
+        <p class="small muted" id="c-msg"></p>`;
+      const go = async fn => {
+        const email = $('#c-email', box).value.trim(), pass = $('#c-pass', box).value;
+        const msg = $('#c-msg', box);
+        if (!email || pass.length < 6) { msg.textContent = 'Informe o e-mail e uma senha de pelo menos 6 caracteres.'; return; }
+        box.querySelectorAll('button').forEach(b => { b.disabled = true; });
+        msg.textContent = 'Conectando…';
+        try {
+          const r = await fn(email, pass);
+          msg.textContent = r === 'confirm' ? 'Conta criada! Abra o e-mail de confirmação que o Supabase enviou, toque no link e depois volte aqui e toque em "Entrar".' : '';
+          if (r !== 'confirm') toast('Conectado à nuvem');
+        } catch (e) { msg.textContent = e.message; }
+        box.querySelectorAll('button').forEach(b => { b.disabled = false; });
+      };
+      $('#c-in', box).onclick = () => go(cloud.signIn);
+      $('#c-up', box).onclick = () => go(cloud.signUp);
+      return;
+    }
+    const line = st.phase === 'syncing' ? 'Sincronizando…'
+      : st.phase === 'error' ? `⚠ ${st.error}`
+        : `✓ ${timeAgo(st.last)}${st.pending ? ` · ${st.pending} alteração(ões) aguardando internet` : ''}`;
+    box.innerHTML = `<h2>Nuvem</h2>
+      <p class="small">Conectado como <b>${esc(st.user.email)}</b></p>
+      <p class="small ${st.phase === 'error' ? '' : 'muted'}" id="c-status">${esc(line)}</p>
+      <p class="small muted">Treinos, corridas, cardio, medidas, fotos, recuperação, plano e metas são salvos automaticamente.</p>
+      <div class="row gap"><button class="btn secondary grow" id="c-sync" ${st.phase === 'syncing' ? 'disabled' : ''}>Sincronizar agora</button><button class="btn secondary grow" id="c-out">Sair da conta</button></div>`;
+    $('#c-sync', box).onclick = () => cloud.sync({ full: true });
+    $('#c-out', box).onclick = async () => {
+      if (!confirm('Sair da conta neste aparelho? Seus dados continuam aqui e na nuvem.')) return;
+      await cloud.signOut();
+    };
+  };
+  const off = cloud.onStatus(st => { if (!box.isConnected) { off(); return; } draw(st); });
+  draw(cloud.status());
+}
 
 export function render(el, p) {
   const pr = S.profile;
@@ -25,6 +82,8 @@ export function render(el, p) {
       <button class="btn block" id="p-save">${welcome ? 'Começar' : 'Salvar perfil'}</button>
     </section>
 
+    <section class="card" id="cloud"></section>
+
     ${welcome ? '' : `<section class="card">
       <h2>Backup dos dados</h2>
       <p class="small muted">Todo o histórico fica neste aparelho. Exporte um backup periodicamente para não perder seus dados (inclui fotos).</p>
@@ -41,6 +100,7 @@ export function render(el, p) {
       <p class="small muted">Baixa a versão mais recente. Seus treinos, fotos e medidas não são apagados.</p>
     </section>`;
   bindChips(el);
+  cloudCard($('#cloud', el), welcome);
   checkForUpdate().then(v => {
     const s = $('#p-latest', el);
     if (!s) return;
@@ -76,8 +136,9 @@ export function render(el, p) {
     catch (err) { toast(err.message || 'Não foi possível importar'); }
   });
   $('#p-wipe', el)?.addEventListener('click', async () => {
-    if (!confirm('Apagar TODO o histórico, perfil e fotos deste aparelho?')) return;
+    if (!confirm('Apagar TODO o histórico, perfil e fotos deste aparelho? (O que já está na nuvem continua lá; você sai da conta neste aparelho.)')) return;
     if (prompt('Digite APAGAR para confirmar') !== 'APAGAR') return;
+    await cloud.signOut();
     await wipe(); location.hash = '#/perfil';
   });
 }
@@ -93,7 +154,7 @@ export function renderMore(el) {
     ${link('#/recuperacao', 'moon', 'Recuperação', 'Sono, disposição, cansaço e dores')}
     ${link('#/corpo', 'body', 'Corpo e fotos', 'Peso, medidas e evolução por fotos')}
     ${link('#/plano', 'plan', 'Plano semanal', 'Dias, exercícios, metas e progressão')}
-    ${link('#/perfil', 'user', 'Perfil e backup', 'Objetivo, nível e cópia dos dados')}
+    ${link('#/perfil', 'user', 'Perfil, nuvem e backup', 'Objetivo, nível, conta na nuvem e cópia dos dados')}
   </section>
   <p class="small muted center">Treino Integrado · dados salvos somente neste aparelho</p>`;
 }
